@@ -198,12 +198,12 @@
 <p>Just a few weeks ago they have also added <a href="https://blog.cloudflare.com/introducing-cache-analytics/" rel="external nofollow noreferrer">cache analytics</a> feature, which allowed to drill into how effectively the content is cached on CDN edges and improve the CDN configuration accordingly. For example, it allowed debugging some inconsistencies in cached repository metadata.</p>
 <h2 id="digging-deeper">Digging Deeper<a class="headerlink" href="#digging-deeper" title="Permanent link"> </a></h2>
 <p>All those built-in observability tools provided by Cloudflare share one weak point: they are purely technical and generic, without any domain-specific awareness. They excel at debugging low-level issues, but it's hard to get a higher-level picture based on them. With our package repository scenario, we're not so interested in frequent metadata update requests, but we'd like to see reports on package downloads by version, kind, and so on. We definitely didn't want to operate a separate infrastructure to get those reports, but given there was no out-of-the-box solution, we had to be creative and managed to find a cool middle ground.</p>
-<p>Ever heard the <a href="https://en.wikipedia.org/wiki/Serverless_computing" rel="external nofollow noreferrer">“serverless computing”</a> hype recently? That was the basic idea: let's assemble a bunch of serverless or managed services to get what we want, without any dedicated servers. The high-level plan was pretty straightforward:</p>
+<p>Ever heard the <a href="https://en.wikipedia.org/wiki/Serverless_computing" rel="external nofollow noreferrer">“serverless computing”</a> hype recently? That was the basic idea: let's assemble a bunch of serverless or managed services to get what we want, without any dedicated servers. The plan was pretty straightforward:</p>
 <ol>
 <li>Dump details about package downloads to a ClickHouse database.</li>
 <li>Connect some <a href="https://en.wikipedia.org/wiki/Business_intelligence" rel="external nofollow noreferrer">BI</a> tool to that ClickHouse database and configure required charts/dashboards.</li>
 </ol>
-<p>Implementing that plan required a little bit of research, but appeared to be quite elegant:</p>
+<p>Implementing it required a little bit of research, but the overall solution appeared to be quite elegant:</p>
 <ol>
 <li>For a ClickHouse database, it was a no-brainer to use <a href="https://cloud.yandex.com/services/managed-clickhouse" rel="external nofollow noreferrer">Yandex Managed Service for ClickHouse</a>. With a few clicks in the admin interface, we got a running ClickHouse cluster with properly configured high-availability and automated backups. Ad-hoc SQL queries could be run from that same admin interface.</li>
 <li>Cloudflare allows customers to run custom code on CDN edge servers in a serverless fashion (so-called <a href="https://workers.cloudflare.com" rel="external nofollow noreferrer">workers</a>). Those workers are executed in a tight sandbox which doesn't allow for anything complicated, but this feature fits perfectly to gather some data about download events and send it somewhere else. This is normally a paid feature, but special thanks to Connor Peshek from Cloudflare who arranged a lot of extra features for free on <code>clickhouse.tech</code> when we have applied to their <a href="https://developers.cloudflare.com/sponsorships/" rel="external nofollow noreferrer">open-source support program</a>. </li>
@@ -211,11 +211,11 @@
 <li>It didn't require much effort to choose a visualization tool either, as <a href="https://cloud.yandex.com/docs/datalens/" rel="external nofollow noreferrer">DataLens BI</a> is tightly integrated with ClickHouse, capable to build what's required right from the UI, and satisfies the “no servers” requirement because it's a SaaS solution.</li>
 </ol>
 <p>There's not so much data collected yet, but here's a live example of how the resulting data visualization looks like. For example, here we can see that LTS releases of ClickHouse are not so popular yet <em>(yes, we have <a href="https://clickhouse.tech/docs/en/faq/operations/production/">LTS releases</a>!)</em>:<br/>
-<a href="https://datalens.yandex/qk01mwxkgiysm?_embedded=1" rel="external nofollow noreferrer">iframe</a></p>
+<div class="embed-responsive embed-responsive-16by9"><iframe allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="1" alt="iframe" class="embed-responsive-item" frameborder="0" src="https://datalens.yandex/qk01mwxkgiysm?_embedded=1"></iframe></div></p>
 <p>While here we confirmed that <code>rpm</code> is at least as popular as <code>deb</code>:<br/>
-<a href="https://datalens.yandex/lfvldsf92i2uh?_embedded=1" rel="external nofollow noreferrer">iframe</a></p>
-<p>Or all together on a <a href="https://datalens.yandex/pjzq4rot3t2ql" rel="external nofollow noreferrer">dashboard</a> with a filtering possibility:<br/>
-<a href="https://datalens.yandex/pjzq4rot3t2ql?_embedded=1" rel="external nofollow noreferrer">iframe</a></p>
+<div class="embed-responsive embed-responsive-16by9"><iframe allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="1" alt="iframe" class="embed-responsive-item" frameborder="0" src="https://datalens.yandex/lfvldsf92i2uh?_embedded=1"></iframe></div></p>
+<p>Or all key charts together on a <a href="https://datalens.yandex/pjzq4rot3t2ql" rel="external nofollow noreferrer">dashboard</a> with a filtering possibility:<br/>
+<div class="embed-responsive embed-responsive-16by9"><iframe allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="1" alt="iframe" class="embed-responsive-item" frameborder="0" src="https://datalens.yandex/pjzq4rot3t2ql?_embedded=1"></iframe></div></p>
 <h2 id="lessons-learned">Lessons Learned<a class="headerlink" href="#lessons-learned" title="Permanent link"> </a></h2>
 <ul>
 <li>CDN is a must-have if you want people from all over the world to download some artifacts that you produce. Beware the huge pay-for-traffic bills from most CDN providers though.</li>
